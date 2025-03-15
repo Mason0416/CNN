@@ -213,15 +213,14 @@ def forwardprop(data,w_1,w_2):
 def backprop(conved_data,ans,output,stock,learn,w_1,w_2):
     #loss-W1 loss_derivative = X'(sig'(z2)w'2)sig'(z1)
     #conved_data = np.array(conved_data)
-    z1 = np.array(stock[1]).reshape(1, -1)  # 確保形狀是 (1, 400)
-    z2 = np.array(stock[2]).reshape(1, -1)  # 確保形狀是 (1, 10)
+    z1 = np.array(stock[1])  # 確保形狀是 (1, 400)
+    z2 = np.array(stock[2])  # 確保形狀是 (1, 10)
     delta_output = (output - ans)*sigmoid_derivative(z2)# (1, 10)
     delta_hidden = np.dot(delta_output, w_2.T) * sigmoid_derivative(z1)  # (1, 400)
-    compute_gradients_1 = np.dot(conved_data.reshape(-1, 1), delta_hidden)  # (input, hidden)
+    compute_gradients_1 = np.dot(np.transpose(conved_data), delta_hidden)  # (input, hidden)
     w_1 = w_1-compute_gradients_1*learn
-    compute_gradients_2 = (output-ans)
     a1_T = np.transpose(sigmoid(z1))
-    compute_gradients_2 = np.dot(a1_T,compute_gradients_2)
+    compute_gradients_2 = np.dot(a1_T,delta_output) 
     w_2 = w_2-compute_gradients_2*learn
     return w_1,w_2
 
@@ -234,7 +233,7 @@ def one_hot(label):
 if __name__ == '__main__':
     init_shared_kernel(8)  # 假設 conv2D 用的是 8 個 kernel
     # 前處理前 100 筆訓練資料
-    train_data = preprocess_mnist_images(x_train_raw, y_train_raw, limit=5000)
+    train_data = preprocess_mnist_images(x_train_raw, y_train_raw, limit=1000)
     # 處理測試資料（可限制幾張）
     test_data = preprocess_mnist_images(x_test_raw, y_test_raw, limit=100)
     LR = 0.0001
@@ -250,12 +249,13 @@ if __name__ == '__main__':
         for i,(x,y) in enumerate(train_data):
             forward,z_stock = forwardprop(x,Warrant_1,Warrant_2)
             Warrant_1,Warrant_2 = backprop(x,y,forward,z_stock,LR,Warrant_1,Warrant_2)
-            if i %100 == 0:
-                loss = np.sum((np.array(y) - forward)**2) / 2  
-                print(f"[{i}] Loss: {loss:.4f}")
-                loss_list.append(loss)
-                if loss <= 0.1:
+            loss = np.mean((forward - y) ** 2)
+            loss_list.append(loss)
+            if loss <= 0.1:
                     break
+            if i %100 == 0:
+                print(f"[{i}] Loss: {loss:.4f}")
+                
 
     
 
