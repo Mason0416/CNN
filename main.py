@@ -75,11 +75,7 @@ def conv(pic,kernel_number,stride,pad):
     for y in range(height):
         for x in range(width):
             picdata[y][x] = int(sum(pic[y][x]) // 3)
-    #for i in range(kernel_number):
-        #kernelset.append([[random.randrange(-1,2,2),random.randrange(-1,2,2),random.randrange(-1,2,2)],
-                #[random.randrange(-1,2,2),random.randrange(-1,2,2),random.randrange(-1,2,2)],
-                #[random.randrange(-1,2,2),random.randrange(-1,2,2),random.randrange(-1,2,2)]])
-
+    
     output_width = int((width-2)//stride+1)
     output_height = int((height-2)//stride+1)
     
@@ -102,11 +98,7 @@ def conv(pic,kernel_number,stride,pad):
                 con += picdata[y + 1][x + 1] * kernelset[k][2][2]
 
                 final_data[y//stride][x//stride][k] = con
-    # print("conv")
-    # for i in range(len(final_data)):
-    #     print(final_data[i])
-    # print("_______")
-    #print(len(final_data))
+    
     return final_data
 
 def pooling(feature):
@@ -154,7 +146,7 @@ def padding(pic,time):
     # print("padding")
     # for i in range(len(tmp_data)):
     #     print(tmp_data[i])
-    # print("_______")
+    # print("_______")polacode.activate
     
 
     return tmp_data
@@ -214,7 +206,7 @@ def forwardprop(data,w_1,w_2):
     hid = sigmoid(hid)
     pre = predict(hid,w_2)
     z.append(pre)
-    pre = softmax(pre)
+    pre = sigmoid(pre)
 
     return pre,z
 
@@ -223,7 +215,7 @@ def backprop(conved_data,ans,output,stock,learn,w_1,w_2):
     #conved_data = np.array(conved_data)
     z1 = np.array(stock[1]).reshape(1, -1)  # 確保形狀是 (1, 400)
     z2 = np.array(stock[2]).reshape(1, -1)  # 確保形狀是 (1, 10)
-    delta_output = output - ans  # (1, 10)
+    delta_output = (output - ans)*sigmoid_derivative(z2)# (1, 10)
     delta_hidden = np.dot(delta_output, w_2.T) * sigmoid_derivative(z1)  # (1, 400)
     compute_gradients_1 = np.dot(conved_data.reshape(-1, 1), delta_hidden)  # (input, hidden)
     w_1 = w_1-compute_gradients_1*learn
@@ -250,7 +242,7 @@ if __name__ == '__main__':
     print(fla_size)
     Warrant_1 = np.random.uniform(-0.1, 0.1, size=(fla_size, 400))
     Warrant_2 = np.random.uniform(-0.1, 0.1, size=(400, 3))
-    epochs = 20
+    epochs = 200000
     loss_list = []
     for epoch in range(epochs):
         print((epoch+1))
@@ -259,9 +251,11 @@ if __name__ == '__main__':
             forward,z_stock = forwardprop(x,Warrant_1,Warrant_2)
             Warrant_1,Warrant_2 = backprop(x,y,forward,z_stock,LR,Warrant_1,Warrant_2)
             if i %100 == 0:
-                loss = -np.sum(np.array(y)*np.log(forward + 1e-8))
+                loss = np.sum((np.array(y) - forward)**2) / 2  
                 print(f"[{i}] Loss: {loss:.4f}")
                 loss_list.append(loss)
+                if loss <= 0.1:
+                    break
 
     
 
